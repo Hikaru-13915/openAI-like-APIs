@@ -1,0 +1,145 @@
+services:
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Ollama: ローカルLLM推論エンジン
+  # ──────────────────────────────────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+      # 企業プロキシのCA証明書: ./certs/ に .crt ファイルを置くと自動インストールされる
+      - ./certs:/tmp/certs:ro
+    environment:
+      HTTP_PROXY: "${HTTP_PROXY:-}"
+      HTTPS_PROXY: "${HTTPS_PROXY:-}"
+      NO_PROXY: "${NO_PROXY:-localhost,127.0.0.1}"
+      http_proxy: "${HTTP_PROXY:-}"
+      https_proxy: "${HTTPS_PROXY:-}"
+      no_proxy: "${NO_PROXY:-localhost,127.0.0.1}"
+      # GPU設定: 全レイヤーをGPUにオフロード (-1 = 全て)
+      OLLAMA_NUM_GPU: "-1"
+      # GPUのVRAM使用上限: .envのOLLAMA_MAX_VRAMで設定 (未設定時はOllamaが自動検出)
+      OLLAMA_MAX_VRAM: "${OLLAMA_MAX_VRAM:-}"
+    # 企業プロキシのCA証明書を ./certs/*.crt からインストールしてから Ollama を起動する
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if ls /tmp/certs/*.crt > /dev/null 2>&1; then
+          cp /tmp/certs/*.crt /usr/local/share/ca-certificates/
+          update-ca-certificates 2>/dev/null || true
+          echo "Custom CA certificates installed."
+        fi
+        exec ollama serve
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    # Ollamaのヘルスチェックは無効化: ollama-init が起動待機を担当する
+    healthcheck:
+      disable: true
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # PostgreSQL: LiteLLMのログ・ユーザー・チーム情報などを永続化する
+  # ──────────────────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-litellm}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB:-litellm_db}"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-litellm} -d ${POSTGRES_DB:-litellm_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # ollama-init: 初回起動時にデフォルトモデルを自動ダウンロードする
+  # ──────────────────────────────────────────────────────────────────────────
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: ollama-init
+    depends_on:
+      ollama:
+        condition: service_started
+    volumes:
+      # 企業プロキシのCA証明書: ollama サービスと同じ certs/ を共有する
+      - ./certs:/tmp/certs:ro
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      HTTP_PROXY: "${HTTP_PROXY:-}"
+      HTTPS_PROXY: "${HTTPS_PROXY:-}"
+      NO_PROXY: "${NO_PROXY:-localhost,127.0.0.1,ollama}"
+      http_proxy: "${HTTP_PROXY:-}"
+      https_proxy: "${HTTPS_PROXY:-}"
+      no_proxy: "${NO_PROXY:-localhost,127.0.0.1,ollama}"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if ls /tmp/certs/*.crt > /dev/null 2>&1; then
+          cp /tmp/certs/*.crt /usr/local/share/ca-certificates/
+          update-ca-certificates 2>/dev/null || true
+          echo "Custom CA certificates installed."
+        fi
+        echo "Waiting for Ollama to be ready..."
+        until ollama list > /dev/null 2>&1; do
+          echo "  Ollama not ready yet, retrying in 5s..."
+          sleep 5
+        done
+        echo "Ollama is ready. Pulling models..."
+        ollama pull gemma3:12b
+        ollama pull llama3.2:11b
+        ollama pull phi4
+        echo "All models pulled successfully."
+    restart: "no"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # LiteLLM: OpenAI互換プロキシ (Ollama → OpenAI APIフォーマット変換)
+  # ──────────────────────────────────────────────────────────────────────────
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm
+    ports:
+      - "${LITELLM_PORT:-4000}:4000"
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml:ro
+    environment:
+      LITELLM_MASTER_KEY: "${LITELLM_MASTER_KEY}"
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-litellm}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-litellm_db}"
+      HTTP_PROXY: "${HTTP_PROXY:-}"
+      HTTPS_PROXY: "${HTTPS_PROXY:-}"
+      NO_PROXY: "${NO_PROXY:-localhost,127.0.0.1,ollama,postgres}"
+      http_proxy: "${HTTP_PROXY:-}"
+      https_proxy: "${HTTPS_PROXY:-}"
+      no_proxy: "${NO_PROXY:-localhost,127.0.0.1,ollama,postgres}"
+    command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "1"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health/liveliness"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  ollama_data:
+  postgres_data:
