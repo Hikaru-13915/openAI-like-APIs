@@ -275,6 +275,22 @@ docker exec ollama ollama pull llama3.2:11b
 docker exec ollama ollama pull phi4
 ```
 
+**4. `x509: certificate signed by unknown authority` エラーが出る場合**
+
+企業プロキシが HTTPS 通信を検査（SSL インスペクション）しているため、プロキシが独自 CA 証明書で署名した証明書を提示していますが、Ollama コンテナがその CA 証明書を信頼していない状態です。
+
+対処法：IT 部門から企業 CA 証明書（`.crt` ファイル）を入手し、`certs/` ディレクトリに配置してください：
+
+```bash
+# 例: IT 部門から取得した企業 CA 証明書を配置する
+cp /path/to/corporate-ca.crt ./certs/corporate-ca.crt
+
+# スタックを再起動する (初回起動時は docker compose up -d でOK)
+docker compose restart ollama ollama-init
+```
+
+`certs/` ディレクトリに `.crt` ファイルを置くと、`ollama` サービスと `ollama-init` サービスの起動時に自動的にシステムの証明書ストアにインストールされます。
+
 ### `APIConnectionError: OllamaException` が返ってくる場合
 
 ```

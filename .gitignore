@@ -1,6 +1,11 @@
 # Environment variables (contains secrets — use .env.example as template)
 .env
 
+# Corporate CA certificates (user-supplied — keep out of version control)
+certs/*.crt
+certs/*.pem
+certs/*.cer
+
 # Python
 __pycache__/
 *.py[cod]

@@ -10,6 +10,8 @@ services:
       - "${OLLAMA_PORT:-11434}:11434"
     volumes:
       - ollama_data:/root/.ollama
+      # 企業プロキシのCA証明書: ./certs/ に .crt ファイルを置くと自動インストールされる
+      - ./certs:/tmp/certs:ro
     environment:
       HTTP_PROXY: "${HTTP_PROXY:-}"
       HTTPS_PROXY: "${HTTPS_PROXY:-}"
@@ -21,6 +23,16 @@ services:
       OLLAMA_NUM_GPU: "-1"
       # GPUのVRAM使用上限: .envのOLLAMA_MAX_VRAMで設定 (未設定時はOllamaが自動検出)
       OLLAMA_MAX_VRAM: "${OLLAMA_MAX_VRAM:-}"
+    # 企業プロキシのCA証明書を ./certs/*.crt からインストールしてから Ollama を起動する
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if ls /tmp/certs/*.crt > /dev/null 2>&1; then
+          cp /tmp/certs/*.crt /usr/local/share/ca-certificates/
+          update-ca-certificates 2>/dev/null || true
+          echo "Custom CA certificates installed."
+        fi
+        exec ollama serve
     deploy:
       resources:
         reservations:
@@ -64,6 +76,9 @@ services:
     depends_on:
       ollama:
         condition: service_started
+    volumes:
+      # 企業プロキシのCA証明書: ollama サービスと同じ certs/ を共有する
+      - ./certs:/tmp/certs:ro
     environment:
       OLLAMA_HOST: http://ollama:11434
       HTTP_PROXY: "${HTTP_PROXY:-}"
@@ -75,6 +90,11 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
+        if ls /tmp/certs/*.crt > /dev/null 2>&1; then
+          cp /tmp/certs/*.crt /usr/local/share/ca-certificates/
+          update-ca-certificates 2>/dev/null || true
+          echo "Custom CA certificates installed."
+        fi
         echo "Waiting for Ollama to be ready..."
         until ollama list > /dev/null 2>&1; do
           echo "  Ollama not ready yet, retrying in 5s..."
