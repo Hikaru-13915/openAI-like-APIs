@@ -45,14 +45,17 @@ docker compose up -d
 
 ### 3. Ollama モデルのダウンロード
 
-コンテナ起動後、利用したいモデルを pull します。
+コンテナ起動後、デフォルトの3モデルを pull します。
 
 ```bash
-# 例: Llama 3
-docker exec ollama ollama pull llama3
+# Gemma 3 27B (Google製 / メイン機)
+docker exec ollama ollama pull gemma3:27b
 
-# 例: Mistral
-docker exec ollama ollama pull mistral
+# Llama 3.3 70B (Meta製 / 理系・思考用)
+docker exec ollama ollama pull llama3.3:70b
+
+# Phi-4 (Microsoft製 / 軽量・安全枠)
+docker exec ollama ollama pull phi4
 ```
 
 > **プロキシ環境の場合**: モデルのダウンロードには外部への通信が必要です。  
@@ -71,7 +74,7 @@ curl http://localhost:4000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer sk-change-me" \
   -d '{
-    "model": "ollama/llama3",
+    "model": "ollama/gemma3:27b",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'
 ```
@@ -94,7 +97,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="ollama/llama3",
+    model="ollama/gemma3:27b",
     messages=[{"role": "user", "content": "Hello!"}],
 )
 print(response.choices[0].message.content)
@@ -108,9 +111,9 @@ print(response.choices[0].message.content)
 
 ```yaml
 model_list:
-  - model_name: ollama/llama3
+  - model_name: ollama/gemma3:27b
     litellm_params:
-      model: ollama/llama3
+      model: ollama/gemma3:27b
       api_base: http://ollama:11434
 ```
 
