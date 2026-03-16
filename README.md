@@ -49,13 +49,25 @@ LITELLM_MASTER_KEY=sk-REPLACE_WITH_RANDOM_KEY
 POSTGRES_PASSWORD=REPLACE_WITH_STRONG_PASSWORD
 ```
 
-### 2. Docker Compose でビルド・起動
+> **⚠️ 重要**: `POSTGRES_PASSWORD` と `LITELLM_MASTER_KEY` は必ずプレースホルダーから実際の値に変更してください。  
+> `POSTGRES_PASSWORD` が空のままだと PostgreSQL コンテナが起動直後にクラッシュします。
+
+### 2. NVIDIA Container Toolkit のインストール（GPU を使用する場合）
+
+```bash
+sudo apt install nvidia-container-toolkit
+sudo systemctl restart docker
+```
+
+> NVIDIA GPU がない環境で起動する場合は、`docker-compose.yml` の `ollama` サービスの `deploy` セクション全体と `OLLAMA_NUM_GPU` / `OLLAMA_MAX_VRAM` 行を削除してから起動してください。
+
+### 3. Docker Compose でビルド・起動
 
 ```bash
 docker compose up -d
 ```
 
-### 3. Ollama モデルのダウンロード
+### 4. Ollama モデルのダウンロード
 
 コンテナ起動後、デフォルトの3モデルを pull します。
 
