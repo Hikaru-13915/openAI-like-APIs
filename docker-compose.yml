@@ -56,6 +56,28 @@ services:
       start_period: 30s
 
   # ──────────────────────────────────────────────────────────────────────────
+  # ollama-init: 初回起動時にデフォルトモデルを自動ダウンロードする
+  # ──────────────────────────────────────────────────────────────────────────
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      HTTP_PROXY: "${HTTP_PROXY:-}"
+      HTTPS_PROXY: "${HTTPS_PROXY:-}"
+      NO_PROXY: "${NO_PROXY:-localhost,127.0.0.1,ollama}"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        ollama pull gemma3:12b
+        ollama pull llama3.2:11b
+        ollama pull phi4
+    restart: "no"
+
+  # ──────────────────────────────────────────────────────────────────────────
   # LiteLLM: OpenAI互換プロキシ (Ollama → OpenAI APIフォーマット変換)
   # ──────────────────────────────────────────────────────────────────────────
   litellm:

@@ -69,21 +69,22 @@ docker compose up -d
 
 ### 4. Ollama モデルのダウンロード
 
-コンテナ起動後、デフォルトの3モデルを pull します。
+`ollama-init` コンテナが Ollama 起動後に自動でデフォルトの3モデルを pull します。手動操作は不要です。
+
+ダウンロードの進捗はログで確認できます：
 
 ```bash
-# Gemma 3 12B (Google製 / メイン機)
-docker exec ollama ollama pull gemma3:12b
-
-# Llama 3.2 11B (Meta製 / 理系・思考用)
-docker exec ollama ollama pull llama3.2:11b
-
-# Phi-4 (Microsoft製 / 軽量・安全枠)
-docker exec ollama ollama pull phi4
+docker compose logs -f ollama-init
 ```
 
 > **プロキシ環境の場合**: モデルのダウンロードには外部への通信が必要です。  
 > `.env` の `HTTP_PROXY` / `HTTPS_PROXY` が正しく設定されていれば自動的にプロキシを使用します。
+
+モデルを追加で pull したい場合：
+
+```bash
+docker exec ollama ollama pull <モデル名>
+```
 
 ---
 
@@ -229,3 +230,25 @@ docker exec ollama ollama list
 # litellm から ollama へ疎通確認
 docker exec litellm curl -f http://ollama:11434/
 ```
+
+### `APIConnectionError: OllamaException` が返ってくる場合
+
+```
+litellm.APIConnectionError: OllamaException - .
+```
+
+モデルがまだダウンロードされていない可能性があります。`ollama-init` コンテナの完了を確認してください：
+
+```bash
+docker compose logs ollama-init
+```
+
+`ollama-init` がまだ動いている（もしくは失敗している）場合は、手動で pull してください：
+
+```bash
+docker exec ollama ollama pull gemma3:12b
+docker exec ollama ollama pull llama3.2:11b
+docker exec ollama ollama pull phi4
+```
+
+pull 完了後、litellm へのリクエストが通るようになります（litellm の再起動は不要です）。
