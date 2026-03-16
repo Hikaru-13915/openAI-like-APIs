@@ -1,0 +1,22 @@
+model_list:
+  # Ollamaで動いているモデルをOpenAI互換エンドポイントとして公開する
+  # 例: llama3, mistral, gemma など、Ollamaにpull済みのモデル名を記述する
+  - model_name: ollama/llama3
+    litellm_params:
+      model: ollama/llama3
+      api_base: http://ollama:11434
+
+  - model_name: ollama/mistral
+    litellm_params:
+      model: ollama/mistral
+      api_base: http://ollama:11434
+
+litellm_settings:
+  # プロキシ経由で外部APIを呼ぶ場合に必要（Ollama はローカルなので不要だが念のため）
+  drop_params: true
+  set_verbose: false
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL
+  store_model_in_db: true

@@ -1,0 +1,16 @@
+# Environment variables (contains secrets — use .env.example as template)
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Editor
+.vscode/
+.idea/
+*.swp
