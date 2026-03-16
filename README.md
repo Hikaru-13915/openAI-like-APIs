@@ -5,6 +5,18 @@ OllamaとLiteLLM、PostgreSQLを用いてOpenAI互換のAPIを提供するリポ
 
 ---
 
+## 前提条件
+
+| 要件 | 詳細 |
+|------|------|
+| **Docker** | Docker Desktop / Docker Engine（Compose Plugin 含む） |
+| **NVIDIA GPU** | VRAM 14 GB 以上の GPU（`nvidia-container-toolkit` インストール済み） |
+| **NVIDIA Container Toolkit** | `sudo apt install nvidia-container-toolkit` などでインストール |
+
+> GPU を使用しない場合は `docker-compose.yml` の `deploy` セクションと `OLLAMA_NUM_GPU` / `OLLAMA_MAX_VRAM` を削除し、CPU モードで起動できます。
+
+---
+
 ## 構成
 
 | サービス | イメージ | 役割 |
