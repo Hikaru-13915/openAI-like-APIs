@@ -27,11 +27,11 @@ services:
               capabilities: [gpu]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/"]
+      test: ["CMD", "ollama", "list"]
       interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
+      timeout: 20s
+      retries: 10
+      start_period: 60s
 
   # ──────────────────────────────────────────────────────────────────────────
   # PostgreSQL: LiteLLMのログ・ユーザー・チーム情報などを永続化する
