@@ -14,10 +14,13 @@ services:
       HTTP_PROXY: "${HTTP_PROXY:-}"
       HTTPS_PROXY: "${HTTPS_PROXY:-}"
       NO_PROXY: "${NO_PROXY:-localhost,127.0.0.1}"
+      http_proxy: "${HTTP_PROXY:-}"
+      https_proxy: "${HTTPS_PROXY:-}"
+      no_proxy: "${NO_PROXY:-localhost,127.0.0.1}"
       # GPU設定: 全レイヤーをGPUにオフロード (-1 = 全て)
       OLLAMA_NUM_GPU: "-1"
-      # GPUのVRAM使用上限 (14 GB = 15,032,385,536 bytes)
-      OLLAMA_MAX_VRAM: "15032385536"
+      # GPUのVRAM使用上限: .envのOLLAMA_MAX_VRAMで設定 (未設定時はOllamaが自動検出)
+      OLLAMA_MAX_VRAM: "${OLLAMA_MAX_VRAM:-}"
     deploy:
       resources:
         reservations:
@@ -69,6 +72,9 @@ services:
       HTTP_PROXY: "${HTTP_PROXY:-}"
       HTTPS_PROXY: "${HTTPS_PROXY:-}"
       NO_PROXY: "${NO_PROXY:-localhost,127.0.0.1,ollama}"
+      http_proxy: "${HTTP_PROXY:-}"
+      https_proxy: "${HTTPS_PROXY:-}"
+      no_proxy: "${NO_PROXY:-localhost,127.0.0.1,ollama}"
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
@@ -93,6 +99,9 @@ services:
       HTTP_PROXY: "${HTTP_PROXY:-}"
       HTTPS_PROXY: "${HTTPS_PROXY:-}"
       NO_PROXY: "${NO_PROXY:-localhost,127.0.0.1,ollama,postgres}"
+      http_proxy: "${HTTP_PROXY:-}"
+      https_proxy: "${HTTPS_PROXY:-}"
+      no_proxy: "${NO_PROXY:-localhost,127.0.0.1,ollama,postgres}"
     command: ["--config", "/app/config.yaml", "--port", "4000", "--num_workers", "1"]
     depends_on:
       postgres:

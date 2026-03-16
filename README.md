@@ -52,6 +52,8 @@ POSTGRES_PASSWORD=REPLACE_WITH_STRONG_PASSWORD
 > **⚠️ 重要**: `POSTGRES_PASSWORD` と `LITELLM_MASTER_KEY` は必ずプレースホルダーから実際の値に変更してください。  
 > `POSTGRES_PASSWORD` が空のままだと PostgreSQL コンテナが起動直後にクラッシュします。
 
+> **プロキシについて**: システム側にすでにプロキシ設定（`http_proxy` 環境変数など）がある場合、`.env` の `HTTP_PROXY` / `HTTPS_PROXY` を空にするとシステムのプロキシ設定がそのまま引き継がれます。二重設定にするとプロキシが競合してモデルのダウンロードに失敗することがあります。
+
 ### 2. NVIDIA Container Toolkit のインストール（GPU を使用する場合）
 
 ```bash
@@ -229,6 +231,41 @@ docker exec ollama ollama list
 
 # litellm から ollama へ疎通確認
 docker exec litellm curl -f http://ollama:11434/
+```
+
+### `ollama-init` でモデルの pull に失敗する場合
+
+まず `ollama-init` のログを確認します：
+
+```bash
+docker compose logs ollama-init
+```
+
+**1. プロキシ経由で `registry.ollama.ai` に到達できない場合**
+
+`.env` の `HTTP_PROXY` / `HTTPS_PROXY` が正しいプロキシを指しているか確認してください。  
+システム側にすでにプロキシ設定がある場合（`http_proxy` 環境変数）は、`.env` のプロキシ設定を空欄にするとシステムのプロキシ設定が引き継がれます：
+
+```dotenv
+# システムのプロキシ設定を引き継ぐ場合は値を空にする
+HTTP_PROXY=
+HTTPS_PROXY=
+```
+
+**2. `ollama-init` が `ollama` コンテナに接続できない場合**
+
+`NO_PROXY` に `ollama` が含まれているか確認します：
+
+```dotenv
+NO_PROXY=localhost,127.0.0.1,ollama,postgres,litellm
+```
+
+**3. 手動で pull する場合**
+
+```bash
+docker exec ollama ollama pull gemma3:12b
+docker exec ollama ollama pull llama3.2:11b
+docker exec ollama ollama pull phi4
 ```
 
 ### `APIConnectionError: OllamaException` が返ってくる場合
