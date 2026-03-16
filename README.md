@@ -191,13 +191,19 @@ docker compose logs postgres
 docker compose logs litellm
 ```
 
-### `ollama` が即座に Error になる場合
+### `ollama` が `Error` または `Unhealthy` になる場合
 
 ```
 ✘ Container ollama  Error  0.0s
 ```
 
-この場合、コンテナ生成そのものが失敗しています。原因は `nvidia-container-toolkit` が未インストールであることがほとんどです。
+または
+
+```
+dependency failed to start: container ollama is unhealthy
+```
+
+コンテナ生成が失敗しているか、ヘルスチェックが誤って失敗しています。原因は `nvidia-container-toolkit` が未インストールであることがほとんどです。
 
 ```bash
 # エラー詳細を確認
@@ -220,8 +226,9 @@ deploy:
           capabilities: [gpu]
 environment:
   OLLAMA_NUM_GPU: "-1"
-  OLLAMA_MAX_VRAM: "15032385536"
 ```
+
+Also remove `OLLAMA_MAX_VRAM` from the GPU-less section if it was set in `.env`.
 
 ### `litellm` が `ollama` に接続できない場合
 

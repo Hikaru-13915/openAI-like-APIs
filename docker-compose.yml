@@ -29,12 +29,9 @@ services:
               count: 1
               capabilities: [gpu]
     restart: unless-stopped
+    # Ollamaのヘルスチェックは無効化: ollama-init が起動待機を担当する
     healthcheck:
-      test: ["CMD", "ollama", "list"]
-      interval: 30s
-      timeout: 20s
-      retries: 10
-      start_period: 60s
+      disable: true
 
   # ──────────────────────────────────────────────────────────────────────────
   # PostgreSQL: LiteLLMのログ・ユーザー・チーム情報などを永続化する
@@ -66,7 +63,7 @@ services:
     container_name: ollama-init
     depends_on:
       ollama:
-        condition: service_healthy
+        condition: service_started
     environment:
       OLLAMA_HOST: http://ollama:11434
       HTTP_PROXY: "${HTTP_PROXY:-}"
@@ -78,9 +75,16 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
+        echo "Waiting for Ollama to be ready..."
+        until ollama list > /dev/null 2>&1; do
+          echo "  Ollama not ready yet, retrying in 5s..."
+          sleep 5
+        done
+        echo "Ollama is ready. Pulling models..."
         ollama pull gemma3:12b
         ollama pull llama3.2:11b
         ollama pull phi4
+        echo "All models pulled successfully."
     restart: "no"
 
   # ──────────────────────────────────────────────────────────────────────────
