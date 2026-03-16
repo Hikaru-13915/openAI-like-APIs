@@ -167,3 +167,65 @@ docker compose down
 # ボリューム（DBデータ・モデル）も含めて削除する場合
 docker compose down -v
 ```
+
+---
+
+## トラブルシューティング
+
+### コンテナが起動しない・エラーが見えない場合
+
+`-d` オプションなしで起動すると、すべてのログがターミナルに直接表示されます：
+
+```bash
+docker compose up
+```
+
+特定コンテナのログだけ確認したい場合：
+
+```bash
+docker compose logs ollama
+docker compose logs postgres
+docker compose logs litellm
+```
+
+### `ollama` が即座に Error になる場合
+
+```
+✘ Container ollama  Error  0.0s
+```
+
+この場合、コンテナ生成そのものが失敗しています。原因は `nvidia-container-toolkit` が未インストールであることがほとんどです。
+
+```bash
+# エラー詳細を確認
+docker inspect ollama 2>/dev/null || echo "コンテナが作成されていません"
+
+# nvidia-container-toolkitのインストール確認
+nvidia-container-cli --version
+```
+
+**GPU なし環境で起動したい場合** は `docker-compose.yml` の `ollama` サービスから以下を削除してください：
+
+```yaml
+# 削除するブロック
+deploy:
+  resources:
+    reservations:
+      devices:
+        - driver: nvidia
+          count: 1
+          capabilities: [gpu]
+environment:
+  OLLAMA_NUM_GPU: "-1"
+  OLLAMA_MAX_VRAM: "15032385536"
+```
+
+### `litellm` が `ollama` に接続できない場合
+
+```bash
+# ollama が正常に動いているか確認
+docker exec ollama ollama list
+
+# litellm から ollama へ疎通確認
+docker exec litellm curl -f http://ollama:11434/
+```
