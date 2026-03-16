@@ -60,11 +60,11 @@ docker compose up -d
 コンテナ起動後、デフォルトの3モデルを pull します。
 
 ```bash
-# Gemma 3 27B (Google製 / メイン機)
-docker exec ollama ollama pull gemma3:27b
+# Gemma 3 12B (Google製 / メイン機)
+docker exec ollama ollama pull gemma3:12b
 
-# Llama 3.3 70B (Meta製 / 理系・思考用)
-docker exec ollama ollama pull llama3.3:70b
+# Llama 3.2 11B (Meta製 / 理系・思考用)
+docker exec ollama ollama pull llama3.2:11b
 
 # Phi-4 (Microsoft製 / 軽量・安全枠)
 docker exec ollama ollama pull phi4
@@ -86,7 +86,7 @@ curl http://localhost:4000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer sk-change-me" \
   -d '{
-    "model": "ollama/gemma3:27b",
+    "model": "ollama/gemma3:12b",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'
 ```
@@ -109,7 +109,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="ollama/gemma3:27b",
+    model="ollama/gemma3:12b",
     messages=[{"role": "user", "content": "Hello!"}],
 )
 print(response.choices[0].message.content)
@@ -123,9 +123,9 @@ print(response.choices[0].message.content)
 
 ```yaml
 model_list:
-  - model_name: ollama/gemma3:27b
+  - model_name: ollama/gemma3:12b
     litellm_params:
-      model: ollama/gemma3:27b
+      model: ollama/gemma3:12b
       api_base: http://ollama:11434
 ```
 

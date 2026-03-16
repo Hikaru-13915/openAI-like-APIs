@@ -1,14 +1,14 @@
 model_list:
-  # Gemma 3 27B (Google製 / メイン機)
-  - model_name: ollama/gemma3:27b
+  # Gemma 3 12B (Google製 / メイン機)
+  - model_name: ollama/gemma3:12b
     litellm_params:
-      model: ollama/gemma3:27b
+      model: ollama/gemma3:12b
       api_base: http://ollama:11434
 
-  # Llama 3.3 70B (Meta製 / 理系・思考用)
-  - model_name: ollama/llama3.3:70b
+  # Llama 3.2 11B (Meta製 / 理系・思考用)
+  - model_name: ollama/llama3.2:11b
     litellm_params:
-      model: ollama/llama3.3:70b
+      model: ollama/llama3.2:11b
       api_base: http://ollama:11434
 
   # Phi-4 (Microsoft製 / 軽量・安全枠)
